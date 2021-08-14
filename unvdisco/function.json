@@ -1,0 +1,20 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "route": "unvdisco/{**path}",
+      "methods": [
+        "GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS", "PROPFIND", "PROPPATCH", "MKCOL", "LOCK", "UNLOCK", "MOVE", "COPY"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}
