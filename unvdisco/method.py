@@ -30,6 +30,10 @@ def move():
     raise HTTPError(501)
 
 
+def copy():
+    raise HTTPError(501)
+
+
 def propfind(headers, path, auth):
     path = urllib.parse.unquote(path)
     depth = int(headers.get('Depth', 0))
@@ -121,8 +125,6 @@ def get(headers, path, auth, url, onlyhead=False):
                 name = x.path[len(文件.path):]
             s += f'<li><a href="{name}">{name}</a></li>'
         return 200, s.encode('utf8'), {'Content-Type': 'text/html;charset=UTF-8'}
-
-
 
 
 def put(headers, path, body, auth):

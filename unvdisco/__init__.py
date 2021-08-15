@@ -23,12 +23,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             'auth': req.headers.get('authorization'),
         }
         a = inspect.getargspec(f).args
-        d = {k:v for k,v in d.items() if k in a}
+        d = {k: v for k, v in d.items() if k in a}
         status_code, t, headers = f(**d)
         # logging.warning(repr([req.url, req.method, dict(req.headers)]) + f' => {status_code}\n')
         return func.HttpResponse(
             t,
-            headers={k:str(v) for k,v in headers.items()},
+            headers={k: str(v) for k, v in headers.items()},
             status_code=status_code,
         )
     except HTTPError as e:
