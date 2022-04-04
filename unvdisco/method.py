@@ -26,18 +26,21 @@ def mkcol(path, auth):
     return 201, b'', {}
 
 
-def move():
-    raise HTTPError(501)
+def move(path, auth, headers, path_prefix):
+    destination = headers['destination']
+    assert destination.startswith(path_prefix)
+    destination = destination[len(path_prefix):]
+    # print('慢慢', path, destination)
+    文件 = 源(path, auth=auth)
+    文件.move(destination)
+    return 200, b'', {}
 
 
 def copy():
     raise HTTPError(501)
 
 
-def propfind(headers, path, auth):
-    path = urllib.parse.unquote(path)
-    depth = int(headers.get('Depth', 0))
-    wished_props = ['getcontenttype', 'getcontentlength', 'creationdate', 'iscollection', 'getetag']
+def _propfind(path, auth, depth, wished_props) -> bytes:
     文件 = 源(path, auth=auth)
     s = '<?xml version="1.0" encoding="utf-8" ?><D:multistatus xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:">'
     def write_props_member(m):
@@ -61,7 +64,16 @@ def propfind(headers, path, auth):
         for 子文件 in 文件.listdir():
             s += write_props_member(子文件)
     s += '</D:multistatus>'
-    s = s.encode('utf-8')
+    return s.encode('utf-8')
+
+
+def propfind(headers, path, auth):
+    if path=='desktop.ini':
+        raise HTTPError(404)
+    path = urllib.parse.unquote(path)
+    depth = int(headers.get('Depth', 0))
+    wished_props = ('getcontenttype', 'getcontentlength', 'creationdate', 'iscollection', 'getetag')
+    s = _propfind(path, auth, depth, wished_props)
     return 207, s, {'Content-Type': 'text/xml', 'Content-Length': len(s)}
 
 
@@ -95,11 +107,11 @@ def get(headers, path, auth, url, onlyhead=False):
             stmp = stmp.split('-')
             try:
                 bpoint = int(stmp[0])
-            except:
+            except Exception:
                 bpoint = 0
             try:
                 epoint = int(stmp[1])
-            except:
+            except Exception:
                 epoint = fullen - 1
             if epoint <= bpoint:
                 bpoint = 0
@@ -137,8 +149,10 @@ def put(headers, path, body, auth):
         return 204, b'', {}
 
 
-def delete():
-    return 501, b'', {}
+def delete(path, auth):
+    文件 = 源(path, auth=auth)
+    文件.delete()
+    return 200, b'', {}
 
 
 # 实际上什么也没做

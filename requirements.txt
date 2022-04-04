@@ -1,3 +1,4 @@
 azure-functions
 azure-storage-common
 azure-storage-blob
+azure-storage-file-datalake

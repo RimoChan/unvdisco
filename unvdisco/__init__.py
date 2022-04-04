@@ -1,6 +1,8 @@
 import json
+import time
 import base64
 import random
+import urllib
 import inspect
 import logging
 
@@ -11,11 +13,22 @@ from .e import HTTPError
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
+    path = req.route_params.get('path', '/')
+    time_a = time.time()
     try:
         # logging.warning(repr([req.url, req.method, dict(req.headers), req.get_body(), req.params]))
         f = method.__getattribute__(req.method.lower())
+        if path=='/':
+            if req.url.endswith('/'):
+                path_prefix = req.url
+            else:
+                path_prefix = req.url+ '/'
+        else:
+            path_prefix = urllib.parse.unquote(req.url)[:-len(path)]
+        # assert path_prefix == 'http://localhost:7071/api/unvdisco/', f'{req.url}|{path}'
         d = {
-            'path': req.route_params.get('path', '/'),
+            'path': path,
+            'path_prefix': path_prefix,
             'headers': req.headers,
             'req': req,
             'url': req.url,
@@ -32,11 +45,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             status_code=status_code,
         )
     except HTTPError as e:
-        return response(f'运行错误({e.code}): {repr(e)}', status_code=e.code)
+        status_code = e.code
+        return response(f'运行错误({e.code}): {repr(e)}', status_code=status_code)
     except Exception as e:
+        status_code = 500
         logging.exception(e)
         logging.warning(repr([req.url, req.method, req.headers, req.params]) + '坏了')
-        return response(f'运行错误: {repr(e)}', status_code=500)
+        return response(f'运行错误: {repr(e)}', status_code=status_code)
+    finally:
+        print(f'【{req.method}】{path} -> {status_code}，用时{time.time()-time_a}。')
 
 
 def response(x, status_code=200, headers={}) -> func.HttpResponse:

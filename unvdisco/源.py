@@ -1,9 +1,9 @@
-import os
 import mimetypes
 
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from azure.storage.blob._models import BlobProperties
+from azure.storage.filedatalake import DataLakeServiceClient
 from azure.core.exceptions import ResourceNotFoundError
 
 from . import config
@@ -12,6 +12,17 @@ from .e import HTTPError
 
 blob_service_client = BlobServiceClient.from_connection_string(config.blob_connection_string)
 unvdisco = blob_service_client.get_container_client(config.blob_container)
+
+data_lake_service_client = DataLakeServiceClient(account_url="https://{}.dfs.core.windows.net".format(config.storage_account_name), credential=config.storage_account_key)
+unvdisco_lake = data_lake_service_client.get_file_system_client(file_system=config.blob_container)
+
+
+_unvdisco = blob_service_client.get_container_client(config.blob_container)
+class _u:
+    def __getattribute__(self, x):
+        print(f'unvdisco.{x}')
+        return _unvdisco.__getattribute__(x)
+unvdisco = _u()
 
 
 class 源:
@@ -43,8 +54,8 @@ class 源:
             return self._meta
         try:
             p = unvdisco.get_blob_client(self.path).get_blob_properties()
-        except ResourceNotFoundError as e:
-            raise HTTPError(404)
+        except ResourceNotFoundError:
+            raise HTTPError(404, f'{self.path}丢了！')
         self._meta = p
         return self._meta
 
@@ -91,6 +102,9 @@ class 源:
 
     def delete(self):
         unvdisco.delete_blob(self.path)
+
+    def move(self, target):
+        unvdisco_lake.get_file_client(self.path).rename_file(f'{config.blob_container}/{target}')
 
     def __repr__(self):
         return f'<源 {self.path} >'
