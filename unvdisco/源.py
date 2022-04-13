@@ -1,3 +1,4 @@
+import time
 import mimetypes
 
 from azure.storage.blob import BlobServiceClient
@@ -23,6 +24,15 @@ class _u:
         print(f'unvdisco.{x}')
         return _unvdisco.__getattribute__(x)
 unvdisco = _u()
+
+
+def unixdate2iso8601(d):
+    tz = time.timezone / 3600 # can it be fractional?
+    tz = '%+03d' % tz
+    return time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(d)) + tz + ':00'
+
+def unixdate2httpdate(d):
+    return time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(d))
 
 
 class 源:
@@ -78,13 +88,16 @@ class 源:
     def get_props(self):
         p = {
             'iscollection': int(not self.isfile()),
-            'creationdate': '2000-01-01T00:00:00-00:00',
+            'creationdate': unixdate2iso8601(self.妹['creation_time'].timestamp()),
+            'getlastmodified': unixdate2httpdate(self.妹['last_modified'].timestamp()),
             'getetag': self.妹.etag,
+            'displayname': self.path.split('/')[-1],
         }
         if self.isfile():
             p['getcontentlength'] = self.get_size()
             p['getcontenttype'] = mimetypes.guess_type(self.path)[0]
         else:
+            p['resourcetype'] = '<D:collection/>'
             p['getcontenttype'] = 'httpd/unix-directory'
         return p
 

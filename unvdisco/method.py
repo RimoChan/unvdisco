@@ -30,7 +30,6 @@ def move(path, auth, headers, path_prefix):
     destination = headers['destination']
     assert destination.startswith(path_prefix)
     destination = destination[len(path_prefix):]
-    # print('慢慢', path, destination)
     文件 = 源(path, auth=auth)
     文件.move(destination)
     return 200, b'', {}
@@ -72,7 +71,7 @@ def propfind(headers, path, auth):
         raise HTTPError(404)
     path = urllib.parse.unquote(path)
     depth = int(headers.get('Depth', 0))
-    wished_props = ('getcontenttype', 'getcontentlength', 'creationdate', 'iscollection', 'getetag')
+    wished_props = ('getcontenttype', 'getcontentlength', 'creationdate', 'getlastmodified', 'iscollection', 'getetag', 'resourcetype', 'displayname')
     s = _propfind(path, auth, depth, wished_props)
     return 207, s, {'Content-Type': 'text/xml', 'Content-Length': len(s)}
 
@@ -100,6 +99,7 @@ def get(headers, path, auth, url, onlyhead=False):
         props = 文件.get_props()
         header = {
             'Content-type': props['getcontenttype'],
+            'Content-length': fullen,
         }
         data = b''
         if 'Range' in headers:
@@ -156,7 +156,7 @@ def delete(path, auth):
 
 
 # 实际上什么也没做
-def proppatch(url):
+def proppatch(url, body):
     data = f'''
     <?xml version="1.0"?>
     <a:multistatus xmlns:Z="urn:schemas-microsoft-com:" xmlns:a="DAV:">
